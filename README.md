@@ -1,5 +1,10 @@
 # MegaCMD-Extra-Tools
 
+Install by cloning / downloading, then from inside the directory:
+    
+`sudo pip3 install .`
+
+
 ## mega-one-way-sync
 
 Performs a one-off, one-way sync from a local directory to a remote directory.
