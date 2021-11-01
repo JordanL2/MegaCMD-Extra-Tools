@@ -30,4 +30,4 @@ This will result in `/data/files` being uploaded to the remote with name `Files`
 
 ### Caveats / TODO
 
-* Only works with Linux
+* Only works with Linux / UNIX-like OSes
