@@ -14,17 +14,28 @@ def main():
     scriptpath = sys.argv.pop(0)
     if len(sys.argv) < 2:
         err("Needs minimum two arguments: LOCALDIR REMOTEDIR [EXCLUDE...]")
-    else:
-        local_dir = sys.argv.pop(0)
-        remote_dir = sys.argv.pop(0)
-        excludes = []
-        while len(sys.argv) > 0:
-            excludes.append(sys.argv.pop(0))
-        sync(local_dir, remote_dir, excludes)
+        sys.exit(1)
+    local_dir = sys.argv.pop(0)
+    remote_dir = sys.argv.pop(0)
+    excludes = []
+    mode = None
+    while len(sys.argv) > 0:
+        arg = sys.argv.pop(0)
+        if arg == '--exclude':
+            mode = 'exclude'
+        elif mode is None:
+            err("Unrecogised argument {}".format(arg))
+            sys.exit(1)
+        else:
+            if mode == 'exclude':
+                excludes.append(arg)
+    sync(local_dir, remote_dir, excludes)
 
 def sync(local_dir, remote_dir, excludes):    
     excludes = [[ee for ee in e.split('/') if ee != ''] for e in excludes]
     out("Syncing from {} to {}".format(local_dir, remote_dir))
+    out("excludes")
+    out(excludes)
     
     # Make remote dir
     cmd("mega-mkdir -p {}".format(remote_dir), ignore_errors=True)
