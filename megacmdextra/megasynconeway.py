@@ -34,8 +34,6 @@ def main():
 def sync(local_dir, remote_dir, excludes):    
     excludes = [[ee for ee in e.split('/') if ee != ''] for e in excludes]
     out("Syncing from {} to {}".format(local_dir, remote_dir))
-    out("excludes")
-    out(excludes)
     
     # Make remote dir
     cmd("mega-mkdir -p {}".format(remote_dir), ignore_errors=True)
