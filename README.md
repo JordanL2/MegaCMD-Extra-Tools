@@ -12,9 +12,9 @@ Performs a one-off, one-way sync from a local directory to a remote directory.
 * Files and directories found in the remote but not in the local will be deleted from the remote.
 * All files found locally that don't exist or are different in the remote are uploaded.
 
-### Invokation
+### Invocation
 
-`mega-one-way-sync LOCALDIR REMOTEDIR [FLAGS...]`
+`mega-one-way-sync LOCALDIR REMOTEDIR [ARGUMENTS...]`
 
 `LOCALDIR` - The path of the local directory
 
