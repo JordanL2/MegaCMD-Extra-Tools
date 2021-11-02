@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import os
+from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import sys
@@ -32,10 +32,16 @@ def main():
     sync(local_dir, remote_dir, excludes)
 
 def sync(local_dir, remote_dir, excludes):
-    local_dir = os.path.abspath(local_dir)
-    remote_dir = ensure_abs(remote_dir)
-    excludes = [[ee for ee in e.split('/') if ee != ''] for e in excludes]
+    local_dir = Path(local_dir).resolve(strict=True)
+    remote_dir = posix_ensure_abs(PurePosixPath(remote_dir))
     out("Syncing from {} to {}".format(local_dir, remote_dir))
+    
+    excluded_paths = []
+    for exclude in excludes:
+        excluded_paths.extend(local_dir.glob(exclude))
+    out("Excluding paths:")
+    for excluded_path in excluded_paths:
+        out("- {}".format(excluded_path))
     
     # Make remote dir
     cmd("mega-mkdir -p {}".format(remote_dir), ignore_errors=True)
@@ -45,13 +51,15 @@ def sync(local_dir, remote_dir, excludes):
     to_delete = []
     for f in remote_files:
         file_name = f[0]
-        local_file_path = os.path.join(parent_dir(local_dir), ensure_no_abs(file_name))
         is_dir = f[1]
+        local_file_path = local_dir
+        for p in file_name.parts[2:]:
+            local_file_path = local_file_path / p
         if is_dir:
-            if not os.path.isdir(local_file_path):
+            if not local_file_path.is_dir():
                 to_delete.append(file_name)
         else:
-            if not os.path.isfile(local_file_path):
+            if not local_file_path.is_file():
                 to_delete.append(file_name)
     
     to_delete = remove_redundant_paths(to_delete)
@@ -60,48 +68,43 @@ def sync(local_dir, remote_dir, excludes):
         cmd("mega-rm -rf \"{}\"".format(f))
     
     # Upload new/modified files to remote
-    dirs_to_upload = calculate_dirs_to_upload(local_dir, excludes)
-    for d in dirs_to_upload:
-        d_relative = ensure_no_abs(d[len(local_dir):])
-        remote_parent_dir = parent_dir(os.path.join(remote_dir, d_relative))
-        out("Upload {} into {}".format(d, remote_parent_dir))
+    dirs_to_upload = calculate_dirs_to_upload(local_dir, excluded_paths)
+    for dir_to_upload in dirs_to_upload:
+        remote_parent_dir = PurePosixPath(remote_dir, dir_to_upload.relative_to(local_dir))
+        out("Upload {} into {}".format(dir_to_upload, remote_parent_dir))
         cmd("mega-put -c \"{}\" \"{}\"".format(d, remote_parent_dir))
 
-def calculate_dirs_to_upload(local_dir, excludes, root=None):
-    if len(excludes) == 0:
+def calculate_dirs_to_upload(local_dir, excluded_paths):
+    if len(excluded_paths) == 0:
         return [local_dir]
 
-    with_root = local_dir
-    if root is not None:
-        with_root = os.path.join(root, local_dir)
-    
     found_exclude = False
     found_dirs = []
-    dirs = os.listdir(with_root)
-    for d in dirs:
-        matching_excludes = []
+    for d in local_dir.iterdir():
+        matching_excluded_paths = []
         exclude_dir = False
-        for e in excludes:
-            if e[0] == d:
-                # This dir matches a path we should exclude
-                found_exclude = True
-                if len(e) == 1:
-                    # This dir *entirely* matches the exclude, so we exclude it
-                    exclude_dir = True
-                else:
-                    # This dir *partially* matches the exclude, so we need to work out
-                    # what dirs/files inside it we can upload
-                    matching_excludes.append(e[1:])
         
+        for excluded_path in excluded_paths:
+            if d == excluded_path:
+                # This dir *entirely* matches the exclude, so we exclude it
+                found_exclude = True
+                exclude_dir = True
+                break
+            elif d in excluded_path.parents:
+                # This dir *partially* matches the exclude, so we need to work out
+                # what dirs/files inside it we can upload
+                found_exclude = True
+                matching_excluded_paths.append(excluded_path)
+
         if not exclude_dir:
-            if len(matching_excludes) > 0:
-                found_dirs.extend(calculate_dirs_to_upload(d, matching_excludes, with_root))
+            if len(matching_excluded_paths) > 0:
+                found_dirs.extend(calculate_dirs_to_upload(Path(local_dir, d), matching_excluded_paths))
             else:
                 found_dirs.append(d)
     
     if found_exclude:
         # We found some dirs/files to exclude, so only return the ones we should upload
-        found_dirs = [os.path.join(local_dir, f) for f in found_dirs]
+        found_dirs = [Path(local_dir, f) for f in found_dirs]
         return found_dirs
     else:
         # No exclusions found, we can upload the entire dir
@@ -115,46 +118,41 @@ def get_remote_files(remote_dir):
     for line in output.split("\n"):
         remote_path_match = remote_path_regex.match(line)
         if remote_path_match:
-            current_dir = ensure_abs(remote_path_match.group(1))
+            # Add directory
+            current_dir = posix_ensure_abs(PurePosixPath(remote_path_match.group(1)))
             path_list.append((current_dir, True))
         else:
             remote_file_match = remote_file_regex.match(line)
             if remote_file_match:
+                # Only add this directory entry if it's not a directory
                 attrs = remote_file_match.group(1)
-                file_name = remote_file_match.group(6)
-                path_list.append((os.path.join(current_dir , file_name), attrs[0] == 'd'))
+                is_dir = attrs[0] == 'd'
+                if not is_dir:
+                    file_name = remote_file_match.group(6)
+                    file_path = PurePosixPath(current_dir, file_name)
+                    path_list.append((file_path, is_dir))
     
     return path_list
 
 def remove_redundant_paths(paths):
-    paths2 = set()
+    paths2 = []
     
     for path in paths:
-        ps = [p for p in path.split('/')]
-        if len(ps) == 1:
-            paths2.add(path)
+        if len(paths2) == 0:
+            paths2.append(path)
         else:
-            for i in range(0, len(ps) - 1):
-                path_start = '/'.join(ps[0 : i + 1])
-                if path_start in paths2:
+            for parent in path.parents:
+                if paths2[-1] == parent:
                     break
             else:
-                paths2.add(path)
+                paths2.append(path)
     
     return paths2
 
-def parent_dir(dir_name):
-    return os.path.normpath(os.path.join(dir_name, '..'))
-
-def ensure_abs(dir_name):
-    if len(dir_name) > 0 and dir_name[0] == '/':
-        return dir_name
-    return '/' + dir_name
-
-def ensure_no_abs(dir_name):
-    if len(dir_name) > 0 and dir_name[0] == '/':
-        return dir_name[1:]
-    return dir_name
+def posix_ensure_abs(path):
+    if not path.is_absolute():
+        return '/' / path
+    return path
 
 def cmd(command, ignore_errors=False):
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
