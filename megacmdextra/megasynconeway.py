@@ -6,8 +6,8 @@ import subprocess
 import sys
 
 
-remote_path_regex = re.compile(r'(/.+):')
-remote_file_regex = re.compile(r'(.{4})\s+([\-0-9]+)\s+([\-0-9]+)\s+(\d\d\w\w\w\d\d\d\d)\s+(\d\d:\d\d:\d\d)\s+(.+)')
+remote_path_regex = re.compile(r'^(.+)\:$')
+remote_file_regex = re.compile(r'^(.{4})\s+([\-0-9]+)\s+([\-0-9]+)\s+(\d\d\w\w\w\d\d\d\d)\s+(\d\d:\d\d:\d\d)\s+(.+)$')
 
 
 def main():
@@ -33,6 +33,7 @@ def main():
 
 def sync(local_dir, remote_dir, excludes):
     local_dir = os.path.abspath(local_dir)
+    remote_dir = ensure_abs(remote_dir)
     excludes = [[ee for ee in e.split('/') if ee != ''] for e in excludes]
     out("Syncing from {} to {}".format(local_dir, remote_dir))
     
@@ -44,7 +45,7 @@ def sync(local_dir, remote_dir, excludes):
     to_delete = []
     for f in remote_files:
         file_name = f[0]
-        local_file_path = ('/' + parent_dir(local_dir) + file_name).replace('//', '/')
+        local_file_path = os.path.join(parent_dir(local_dir), ensure_no_abs(file_name))
         is_dir = f[1]
         if is_dir:
             if not os.path.isdir(local_file_path):
@@ -113,14 +114,14 @@ def get_remote_files(remote_dir):
     for line in output.split("\n"):
         remote_path_match = remote_path_regex.match(line)
         if remote_path_match:
-            current_dir = remote_path_match.group(1)
+            current_dir = ensure_abs(remote_path_match.group(1))
             path_list.append((current_dir, True))
         else:
             remote_file_match = remote_file_regex.match(line)
             if remote_file_match:
                 attrs = remote_file_match.group(1)
                 file_name = remote_file_match.group(6)
-                path_list.append((current_dir + '/' + file_name, attrs[0] == 'd'))
+                path_list.append((os.path.join(current_dir , file_name), attrs[0] == 'd'))
     
     return path_list
 
@@ -142,10 +143,17 @@ def remove_redundant_paths(paths):
     return paths2
 
 def parent_dir(dir_name):
-    ds = [d for d in dir_name.split('/') if d != '']
-    if len(ds) <= 1:
-        return '/'
-    return '/'.join(ds[0:-1])
+    return os.path.normpath(os.path.join(dir_name, '..'))
+
+def ensure_abs(dir_name):
+    if len(dir_name) > 0 and dir_name[0] == '/':
+        return dir_name
+    return '/' + dir_name
+
+def ensure_no_abs(dir_name):
+    if len(dir_name) > 0 and dir_name[0] == '/':
+        return dir_name[1:]
+    return dir_name
 
 def cmd(command, ignore_errors=False):
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
