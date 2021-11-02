@@ -50,17 +50,17 @@ def sync(local_dir, remote_dir, excludes):
     remote_files = get_remote_files(remote_dir)
     to_delete = []
     for f in remote_files:
-        file_name = f[0]
+        remote_file_path = f[0]
         is_dir = f[1]
         local_file_path = local_dir
-        for p in file_name.parts[2:]:
+        for p in remote_file_path.parts[2:]:
             local_file_path = local_file_path / p
         if is_dir:
             if not local_file_path.is_dir():
-                to_delete.append(file_name)
+                to_delete.append(remote_file_path)
         else:
             if not local_file_path.is_file():
-                to_delete.append(file_name)
+                to_delete.append(remote_file_path)
     
     to_delete = remove_redundant_paths(to_delete)
     for f in to_delete:
@@ -68,11 +68,11 @@ def sync(local_dir, remote_dir, excludes):
         cmd("mega-rm -rf \"{}\"".format(f))
     
     # Upload new/modified files to remote
-    dirs_to_upload = calculate_dirs_to_upload(local_dir, excluded_paths)
-    for dir_to_upload in dirs_to_upload:
-        remote_parent_dir = PurePosixPath(remote_dir, dir_to_upload.relative_to(local_dir))
-        out("Upload {} into {}".format(dir_to_upload, remote_parent_dir))
-        cmd("mega-put -c \"{}\" \"{}\"".format(dir_to_upload, remote_parent_dir))
+    paths_to_upload = calculate_dirs_to_upload(local_dir, excluded_paths)
+    for path_to_upload in paths_to_upload:
+        remote_parent_dir = PurePosixPath(remote_dir, path_to_upload.relative_to(local_dir)).parent
+        out("Upload {} into {}".format(path_to_upload, remote_parent_dir))
+        cmd("mega-put -c \"{}\" \"{}\"".format(path_to_upload, remote_parent_dir))
 
 def calculate_dirs_to_upload(local_dir, excluded_paths):
     if len(excluded_paths) == 0:
