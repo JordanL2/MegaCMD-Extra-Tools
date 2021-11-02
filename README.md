@@ -22,7 +22,7 @@ Performs a one-off, one-way sync from a local directory to a remote directory.
 
 ### Arguments
 
-`--exclude [EXCLUDES...]` A list of files/directories you don't want uploaded. These are paths relative to the local directory.
+`--exclude [EXCLUDES...]` A list of files/directories you don't want uploaded. These are paths relative to the local directory, and can be globs (e.g. "**/*.jpg")
 
 ### Examples
 
@@ -32,4 +32,4 @@ This will result in `/data/files` being uploaded/synced to the remote with name 
 
 ### Caveats / TODO
 
-* Only works with Linux / UNIX-like OSes
+* Only tested on Linux, Windows should theoretically work
