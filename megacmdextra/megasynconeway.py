@@ -31,7 +31,8 @@ def main():
                 excludes.append(arg)
     sync(local_dir, remote_dir, excludes)
 
-def sync(local_dir, remote_dir, excludes):    
+def sync(local_dir, remote_dir, excludes):
+    local_dir = os.path.abspath(local_dir)
     excludes = [[ee for ee in e.split('/') if ee != ''] for e in excludes]
     out("Syncing from {} to {}".format(local_dir, remote_dir))
     
