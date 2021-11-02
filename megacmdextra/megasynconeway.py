@@ -62,7 +62,8 @@ def sync(local_dir, remote_dir, excludes):
     # Upload new/modified files to remote
     dirs_to_upload = calculate_dirs_to_upload(local_dir, excludes)
     for d in dirs_to_upload:
-        remote_parent_dir = parent_dir(remote_dir + '/' + d[len(local_dir):])
+        d_relative = ensure_no_abs(d[len(local_dir):])
+        remote_parent_dir = parent_dir(os.path.join(remote_dir, d_relative))
         out("Upload {} into {}".format(d, remote_parent_dir))
         cmd("mega-put -c \"{}\" \"{}\"".format(d, remote_parent_dir))
 
@@ -72,7 +73,7 @@ def calculate_dirs_to_upload(local_dir, excludes, root=None):
 
     with_root = local_dir
     if root is not None:
-        with_root = root + '/' + local_dir
+        with_root = os.path.join(root, local_dir)
     
     found_exclude = False
     found_dirs = []
@@ -100,7 +101,7 @@ def calculate_dirs_to_upload(local_dir, excludes, root=None):
     
     if found_exclude:
         # We found some dirs/files to exclude, so only return the ones we should upload
-        found_dirs = ["{}/{}".format(local_dir, f) for f in found_dirs]
+        found_dirs = [os.path.join(local_dir, f) for f in found_dirs]
         return found_dirs
     else:
         # No exclusions found, we can upload the entire dir
