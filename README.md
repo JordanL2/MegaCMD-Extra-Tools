@@ -5,7 +5,7 @@ Install by cloning / downloading, then from inside the directory:
 `sudo pip3 install .`
 
 
-## mega-one-way-sync
+## mega-sync-one-way
 
 Performs a one-off, one-way sync from a local directory to a remote directory.
 
@@ -14,7 +14,7 @@ Performs a one-off, one-way sync from a local directory to a remote directory.
 
 ### Invocation
 
-`mega-one-way-sync LOCALDIR REMOTEDIR [ARGUMENTS...]`
+`mega-sync-one-way LOCALDIR REMOTEDIR [ARGUMENTS...]`
 
 `LOCALDIR` - The path of the local directory
 
@@ -26,7 +26,7 @@ Performs a one-off, one-way sync from a local directory to a remote directory.
 
 ### Examples
 
-`mega-one-way-sync /data/files Files --exclude dir1 dir2/file1`
+`mega-sync-one-way /data/files Files --exclude dir1 dir2/file1`
 
 This will result in `/data/files` being uploaded/synced to the remote with name `Files`. The directory `/data/files/dir1` and file `/data/files/dir2/file1` will not be uploaded.
 
