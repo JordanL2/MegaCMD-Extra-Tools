@@ -138,14 +138,8 @@ def remove_redundant_paths(paths):
     paths2 = []
     
     for path in paths:
-        if len(paths2) == 0:
+        if len(paths2) == 0 or paths2[-1] not in path.parents:
             paths2.append(path)
-        else:
-            for parent in path.parents:
-                if paths2[-1] == parent:
-                    break
-            else:
-                paths2.append(path)
     
     return paths2
 
