@@ -52,9 +52,7 @@ def sync(local_dir, remote_dir, excludes):
     for f in remote_files:
         remote_file_path = f[0]
         is_dir = f[1]
-        local_file_path = local_dir
-        for p in remote_file_path.parts[2:]:
-            local_file_path = local_file_path / p
+        local_file_path = local_dir.joinpath(*(remote_file_path.parts[2:]))
         if is_dir:
             if not local_file_path.is_dir():
                 to_delete.append(remote_file_path)
@@ -68,44 +66,44 @@ def sync(local_dir, remote_dir, excludes):
         cmd("mega-rm -rf \"{}\"".format(f))
     
     # Upload new/modified files to remote
-    paths_to_upload = calculate_dirs_to_upload(local_dir, excluded_paths)
+    paths_to_upload = calculate_paths_to_upload(local_dir, excluded_paths)
     for path_to_upload in paths_to_upload:
         remote_parent_dir = PurePosixPath(remote_dir, path_to_upload.relative_to(local_dir)).parent
         out("Upload {} into {}".format(path_to_upload, remote_parent_dir))
         cmd("mega-put -c \"{}\" \"{}\"".format(path_to_upload, remote_parent_dir))
 
-def calculate_dirs_to_upload(local_dir, excluded_paths):
+def calculate_paths_to_upload(local_dir, excluded_paths):
     if len(excluded_paths) == 0:
         return [local_dir]
 
     found_exclude = False
-    found_dirs = []
-    for d in local_dir.iterdir():
+    found_paths = []
+    for path in local_dir.iterdir():
         matching_excluded_paths = []
-        exclude_dir = False
+        exclude_path = False
         
         for excluded_path in excluded_paths:
-            if d == excluded_path:
-                # This dir *entirely* matches the exclude, so we exclude it
+            if path == excluded_path:
+                # This path *entirely* matches the exclude, so we exclude it
                 found_exclude = True
-                exclude_dir = True
+                exclude_path = True
                 break
-            elif d in excluded_path.parents:
+            elif path in excluded_path.parents:
                 # This dir *partially* matches the exclude, so we need to work out
-                # what dirs/files inside it we can upload
+                # what paths inside it we can upload
                 found_exclude = True
                 matching_excluded_paths.append(excluded_path)
 
-        if not exclude_dir:
+        if not exclude_path:
             if len(matching_excluded_paths) > 0:
-                found_dirs.extend(calculate_dirs_to_upload(Path(local_dir, d), matching_excluded_paths))
+                found_paths.extend(calculate_paths_to_upload(Path(local_dir, path), matching_excluded_paths))
             else:
-                found_dirs.append(d)
+                found_paths.append(path)
     
     if found_exclude:
-        # We found some dirs/files to exclude, so only return the ones we should upload
-        found_dirs = [Path(local_dir, f) for f in found_dirs]
-        return found_dirs
+        # We found some paths to exclude, so only return the ones we should upload
+        found_paths = [Path(local_dir, f) for f in found_paths]
+        return found_paths
     else:
         # No exclusions found, we can upload the entire dir
         return [local_dir]
