@@ -72,7 +72,7 @@ def sync(local_dir, remote_dir, excludes):
     for dir_to_upload in dirs_to_upload:
         remote_parent_dir = PurePosixPath(remote_dir, dir_to_upload.relative_to(local_dir))
         out("Upload {} into {}".format(dir_to_upload, remote_parent_dir))
-        cmd("mega-put -c \"{}\" \"{}\"".format(d, remote_parent_dir))
+        cmd("mega-put -c \"{}\" \"{}\"".format(dir_to_upload, remote_parent_dir))
 
 def calculate_dirs_to_upload(local_dir, excluded_paths):
     if len(excluded_paths) == 0:
