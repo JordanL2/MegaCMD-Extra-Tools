@@ -70,9 +70,9 @@ def get_remote_to_delete(local_dir, remote_dir):
         if remote_path_match:
             # Directory
             current_dir = posix_ensure_abs(PurePosixPath(remote_path_match.group(1)))
-            local_file_path = local_dir.joinpath(*(current_dir.parts[2:]))
-            if not local_file_path.is_dir():
-                if len(path_list) == 0 or path_list[-1] not in current_dir.parents:
+            if len(path_list) == 0 or path_list[-1] not in current_dir.parents:
+                local_file_path = local_dir.joinpath(*(current_dir.parts[2:]))
+                if not local_file_path.is_dir():
                     path_list.append(current_dir)
         else:
             remote_file_match = remote_file_regex.match(line)
@@ -84,9 +84,9 @@ def get_remote_to_delete(local_dir, remote_dir):
                     # File
                     file_name = remote_file_match.group(6)
                     file_path = PurePosixPath(current_dir, file_name)
-                    local_file_path = local_dir.joinpath(*(file_path.parts[2:]))
-                    if not local_file_path.is_file():
-                        if len(path_list) == 0 or path_list[-1] not in file_path.parents:
+                    if len(path_list) == 0 or path_list[-1] not in file_path.parents:
+                        local_file_path = local_dir.joinpath(*(file_path.parts[2:]))
+                        if not local_file_path.is_file():
                             path_list.append(file_path)
 
     return path_list
