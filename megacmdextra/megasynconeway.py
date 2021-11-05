@@ -61,7 +61,6 @@ def sync(local_dir, remote_dir, excludes):
         cmd("mega-put -c \"{}\" \"{}\"".format(path_to_upload, remote_parent_dir))
 
 def get_remote_to_delete(local_dir, remote_dir):
-    remote_dir_parts_count = len(remote_dir.parts)
     path_list = []
     output = cmd("mega-ls -Rl {}".format(remote_dir))
 
@@ -72,7 +71,7 @@ def get_remote_to_delete(local_dir, remote_dir):
             # Directory
             current_dir = posix_ensure_abs(PurePosixPath(remote_path_match.group(1)))
             if len(path_list) == 0 or path_list[-1] not in current_dir.parents:
-                local_file_path = local_dir.joinpath(*(current_dir.parts[remote_dir_parts_count:]))
+                local_file_path = Path(local_dir, current_dir.relative_to(remote_dir))
                 if not local_file_path.is_dir():
                     path_list.append(current_dir)
         else:
@@ -86,7 +85,7 @@ def get_remote_to_delete(local_dir, remote_dir):
                     file_name = remote_file_match.group(6)
                     file_path = PurePosixPath(current_dir, file_name)
                     if len(path_list) == 0 or path_list[-1] not in file_path.parents:
-                        local_file_path = local_dir.joinpath(*(file_path.parts[remote_dir_parts_count:]))
+                        local_file_path = Path(local_dir, file_path.relative_to(remote_dir))
                         if not local_file_path.is_file():
                             path_list.append(file_path)
 
