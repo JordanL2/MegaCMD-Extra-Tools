@@ -35,7 +35,8 @@ def sync(local_dir, remote_dir, excludes):
     local_dir = Path(local_dir).resolve(strict=True)
     remote_dir = posix_ensure_abs(PurePosixPath(remote_dir))
     out("Syncing from {} to {}".format(local_dir, remote_dir))
-    
+
+    # Find all actual files/directories excluded by exclude globs
     excluded_paths = []
     for exclude in excludes:
         excluded_paths.extend(local_dir.glob(exclude))
@@ -47,20 +48,7 @@ def sync(local_dir, remote_dir, excludes):
     cmd("mega-mkdir -p {}".format(remote_dir), ignore_errors=True)
     
     # Delete dirs/files in remote that don't exist in local
-    remote_files = get_remote_files(remote_dir)
-    to_delete = []
-    for f in remote_files:
-        remote_file_path = f[0]
-        is_dir = f[1]
-        local_file_path = local_dir.joinpath(*(remote_file_path.parts[2:]))
-        if is_dir:
-            if not local_file_path.is_dir():
-                to_delete.append(remote_file_path)
-        else:
-            if not local_file_path.is_file():
-                to_delete.append(remote_file_path)
-    
-    to_delete = remove_redundant_paths(to_delete)
+    to_delete = get_remote_to_delete(local_dir, remote_dir)
     for f in to_delete:
         out("Delete from remote: {}".format(f))
         cmd("mega-rm -rf \"{}\"".format(f))
@@ -108,38 +96,36 @@ def calculate_paths_to_upload(local_dir, excluded_paths):
         # No exclusions found, we can upload the entire dir
         return [local_dir]
 
-def get_remote_files(remote_dir):
+def get_remote_to_delete(local_dir, remote_dir):
     path_list = []
     output = cmd("mega-ls -Rl {}".format(remote_dir))
-    
+
     current_dir = None
     for line in output.split("\n"):
         remote_path_match = remote_path_regex.match(line)
         if remote_path_match:
-            # Add directory
+            # Directory
             current_dir = posix_ensure_abs(PurePosixPath(remote_path_match.group(1)))
-            path_list.append((current_dir, True))
+            local_file_path = local_dir.joinpath(*(current_dir.parts[2:]))
+            if not local_file_path.is_dir():
+                if len(path_list) == 0 or path_list[-1] not in current_dir.parents:
+                    path_list.append(current_dir)
         else:
             remote_file_match = remote_file_regex.match(line)
             if remote_file_match:
-                # Only add this directory entry if it's not a directory
+                # Ignore directories as they're managed by above block
                 attrs = remote_file_match.group(1)
                 is_dir = attrs[0] == 'd'
                 if not is_dir:
+                    # File
                     file_name = remote_file_match.group(6)
                     file_path = PurePosixPath(current_dir, file_name)
-                    path_list.append((file_path, is_dir))
-    
-    return path_list
+                    local_file_path = local_dir.joinpath(*(file_path.parts[2:]))
+                    if not local_file_path.is_file():
+                        if len(path_list) == 0 or path_list[-1] not in file_path.parents:
+                            path_list.append(file_path)
 
-def remove_redundant_paths(paths):
-    paths2 = []
-    
-    for path in paths:
-        if len(paths2) == 0 or paths2[-1] not in path.parents:
-            paths2.append(path)
-    
-    return paths2
+    return path_list
 
 def posix_ensure_abs(path):
     if not path.is_absolute():
