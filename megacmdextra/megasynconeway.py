@@ -54,7 +54,7 @@ def sync(local_dir, remote_dir, excludes):
         cmd("mega-rm -rf \"{}\"".format(f))
 
     # Upload new/modified files to remote
-    paths_to_upload = calculate_paths_to_upload(local_dir, excluded_paths)
+    paths_to_upload = get_local_to_upload(local_dir, excluded_paths)
     for path_to_upload in paths_to_upload:
         remote_parent_dir = PurePosixPath(remote_dir, path_to_upload.relative_to(local_dir)).parent
         out("Upload {} into {}".format(path_to_upload, remote_parent_dir))
@@ -91,7 +91,7 @@ def get_remote_to_delete(local_dir, remote_dir):
 
     return path_list
 
-def calculate_paths_to_upload(local_dir, excluded_paths):
+def get_local_to_upload(local_dir, excluded_paths):
     if len(excluded_paths) == 0:
         return [local_dir]
 
@@ -115,13 +115,12 @@ def calculate_paths_to_upload(local_dir, excluded_paths):
 
         if not exclude_path:
             if len(matching_excluded_paths) > 0:
-                found_paths.extend(calculate_paths_to_upload(Path(local_dir, path), matching_excluded_paths))
+                found_paths.extend(get_local_to_upload(Path(local_dir, path), matching_excluded_paths))
             else:
                 found_paths.append(path)
 
     if found_exclude:
         # We found some paths to exclude, so only return the ones we should upload
-        found_paths = [Path(local_dir, f) for f in found_paths]
         return found_paths
     else:
         # No exclusions found, we can upload the entire dir
