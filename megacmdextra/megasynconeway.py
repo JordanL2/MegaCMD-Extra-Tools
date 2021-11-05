@@ -44,9 +44,6 @@ def sync(local_dir, remote_dir, excludes):
     for excluded_path in excluded_paths:
         out("- {}".format(excluded_path))
 
-    # Ensure remote directory exists
-    cmd("mega-mkdir -p {}".format(remote_dir), ignore_errors=True)
-
     # Delete dirs/files in remote that don't exist in local
     to_delete = get_remote_to_delete(local_dir, remote_dir)
     for f in to_delete:
@@ -62,7 +59,7 @@ def sync(local_dir, remote_dir, excludes):
 
 def get_remote_to_delete(local_dir, remote_dir):
     path_list = []
-    output = cmd("mega-ls -Rl {}".format(remote_dir))
+    output = cmd("mega-ls -Rl {}".format(remote_dir), ignore_errors=True)
 
     current_dir = None
     for line in output.split("\n"):
