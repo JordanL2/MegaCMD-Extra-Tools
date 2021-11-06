@@ -12,17 +12,23 @@ Performs a one-off, one-way sync from a local directory to a remote directory.
 * Files and directories found in the remote but not in the local will be deleted from the remote.
 * All files found locally that don't exist or are different in the remote are uploaded.
 
-### Invocation
+It's recommended to first use the `--dryrun` argument to show what actions will be taken, before performing the actual sync.
 
-`mega-sync-one-way LOCALDIR REMOTEDIR [ARGUMENTS...]`
+### Usage
 
-`LOCALDIR` - The path of the local directory
+```
+usage: mega-sync-one-way [-h] [-e [EXCLUDES ...]] [-d] local_dir remote_dir
 
-`REMOTEDIR` The path on the remote you want this directory synced *to* (not *into*)
+positional arguments:
+  local_dir             local directory to sync to remote
+  remote_dir            remote location to sync local directory to
 
-### Arguments
-
-`--exclude [EXCLUDES...]` A list of files/directories you don't want uploaded. These are paths relative to the local directory, and can be globs (e.g. "**/*.jpg")
+optional arguments:
+  -h, --help            show this help message and exit
+  -e [EXCLUDES ...], --exclude [EXCLUDES ...]
+                        list of file patterns to exclude from sync
+  -d, --dryrun          output list of actions to be taken, but don't do anything
+```
 
 ### Examples
 
