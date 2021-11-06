@@ -20,12 +20,8 @@ def main():
     parser.add_argument('-d', '--dryrun', dest='dryrun', action='store_true', default=False, help='output list of actions to be taken, but don\'t do anything')
 
     args = parser.parse_args()
-    local_dir = args.local_dir
-    remote_dir = args.remote_dir
-    excludes = args.excludes
-    dryrun = args.dryrun
 
-    sync(local_dir, remote_dir, excludes=excludes, dryrun=dryrun)
+    sync(args.local_dir, args.remote_dir, excludes=args.excludes, dryrun=args.dryrun)
 
 def sync(local_dir, remote_dir, excludes=None, dryrun=False):
     local_dir = Path(local_dir).resolve(strict=True)
@@ -37,9 +33,10 @@ def sync(local_dir, remote_dir, excludes=None, dryrun=False):
     if excludes is not None:
         for exclude in excludes:
             excluded_paths.extend(local_dir.glob(exclude))
-    out("Excluding paths:")
-    for excluded_path in excluded_paths:
-        out("- {}".format(excluded_path))
+    if len(excluded_paths) > 0:
+        out("Excluding paths:")
+        for excluded_path in excluded_paths:
+            out("- {}".format(excluded_path))
 
     # Delete dirs/files in remote that don't exist in local
     to_delete = get_remote_to_delete(local_dir, remote_dir)
