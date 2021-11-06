@@ -20,8 +20,8 @@ It's recommended to first use the `--dryrun` argument to show what actions will 
 usage: mega-sync-one-way [-h] [-e [EXCLUDES ...]] [-d] local_dir remote_dir
 
 positional arguments:
-  local_dir             local directory to sync to remote
-  remote_dir            remote location to sync local directory to
+  LOCALDIR              local directory to sync to remote
+  REMOTEDIR             remote location to sync local directory
 
 optional arguments:
   -h, --help            show this help message and exit

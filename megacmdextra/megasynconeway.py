@@ -14,14 +14,14 @@ remote_file_regex = re.compile(r'^(.{4})\s+([\-0-9]+)\s+([\-0-9]+)\s+(\d\d\w\w\w
 def main():
     parser = argparse.ArgumentParser(prog='mega-sync-one-way')
 
-    parser.add_argument('local_dir', help='local directory to sync to remote')
-    parser.add_argument('remote_dir', help='remote location to sync local directory to')
+    parser.add_argument('LOCALDIR', help='local directory to sync to remote')
+    parser.add_argument('REMOTEDIR', help='remote location to sync local directory')
     parser.add_argument('-e', '--exclude', dest='excludes', nargs='*', help='list of file patterns to exclude from sync')
     parser.add_argument('-d', '--dryrun', dest='dryrun', action='store_true', default=False, help='output list of actions to be taken, but don\'t do anything')
 
     args = parser.parse_args()
 
-    sync(args.local_dir, args.remote_dir, excludes=args.excludes, dryrun=args.dryrun)
+    sync(args.LOCALDIR, args.REMOTEDIR, excludes=args.excludes, dryrun=args.dryrun)
 
 def sync(local_dir, remote_dir, excludes=None, dryrun=False):
     local_dir = Path(local_dir).resolve(strict=True)
