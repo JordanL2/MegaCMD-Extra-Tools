@@ -135,9 +135,6 @@ def cmd(command, ignore_errors=False):
 def out(message):
     print(message, flush=True)
 
-def err(message):
-    print(message, flush=True, file=sys.stderr)
-
 
 if __name__ == '__main__':
     main()
