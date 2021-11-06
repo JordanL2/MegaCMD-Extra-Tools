@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import argparse
 from pathlib import Path, PurePosixPath
 import re
 import subprocess
@@ -11,35 +12,31 @@ remote_file_regex = re.compile(r'^(.{4})\s+([\-0-9]+)\s+([\-0-9]+)\s+(\d\d\w\w\w
 
 
 def main():
-    scriptpath = sys.argv.pop(0)
-    if len(sys.argv) < 2:
-        err("Needs minimum two arguments: LOCALDIR REMOTEDIR [EXCLUDE...]")
-        sys.exit(1)
-    local_dir = sys.argv.pop(0)
-    remote_dir = sys.argv.pop(0)
-    excludes = []
-    mode = None
-    while len(sys.argv) > 0:
-        arg = sys.argv.pop(0)
-        if arg == '--exclude':
-            mode = 'exclude'
-        elif mode is None:
-            err("Unrecogised argument {}".format(arg))
-            sys.exit(1)
-        else:
-            if mode == 'exclude':
-                excludes.append(arg)
-    sync(local_dir, remote_dir, excludes)
+    parser = argparse.ArgumentParser(prog='mega-sync-one-way')
 
-def sync(local_dir, remote_dir, excludes):
+    parser.add_argument('local_dir', help='local directory to sync to remote')
+    parser.add_argument('remote_dir', help='remote location to sync local directory to')
+    parser.add_argument('-e', '--exclude', dest='excludes', nargs='*', help='list of file patterns to exclude from sync')
+    parser.add_argument('-d', '--dryrun', dest='dryrun', action='store_true', default=False, help='output list of actions to be taken, but don\'t do anything')
+
+    args = parser.parse_args()
+    local_dir = args.local_dir
+    remote_dir = args.remote_dir
+    excludes = args.excludes
+    dryrun = args.dryrun
+
+    sync(local_dir, remote_dir, excludes=excludes, dryrun=dryrun)
+
+def sync(local_dir, remote_dir, excludes=None, dryrun=False):
     local_dir = Path(local_dir).resolve(strict=True)
     remote_dir = posix_ensure_abs(PurePosixPath(remote_dir))
     out("Syncing from {} to {}".format(local_dir, remote_dir))
 
     # Find all actual local files/directories excluded by exclude globs
     excluded_paths = []
-    for exclude in excludes:
-        excluded_paths.extend(local_dir.glob(exclude))
+    if excludes is not None:
+        for exclude in excludes:
+            excluded_paths.extend(local_dir.glob(exclude))
     out("Excluding paths:")
     for excluded_path in excluded_paths:
         out("- {}".format(excluded_path))
@@ -48,14 +45,16 @@ def sync(local_dir, remote_dir, excludes):
     to_delete = get_remote_to_delete(local_dir, remote_dir)
     for f in to_delete:
         out("Delete from remote: {}".format(f))
-        cmd("mega-rm -rf \"{}\"".format(f))
+        if not dryrun:
+            cmd("mega-rm -rf \"{}\"".format(f))
 
     # Upload new/modified files to remote
     paths_to_upload = get_local_to_upload(local_dir, excluded_paths)
     for path_to_upload in paths_to_upload:
         remote_parent_dir = PurePosixPath(remote_dir, path_to_upload.relative_to(local_dir)).parent
         out("Upload {} into {}".format(path_to_upload, remote_parent_dir))
-        cmd("mega-put -c \"{}\" \"{}\"".format(path_to_upload, remote_parent_dir))
+        if not dryrun:
+            cmd("mega-put -c \"{}\" \"{}\"".format(path_to_upload, remote_parent_dir))
 
 def get_remote_to_delete(local_dir, remote_dir):
     path_list = []
