@@ -32,9 +32,9 @@ optional arguments:
 
 ### Examples
 
-`mega-sync-one-way /data/files Files --exclude dir1 dir2/file1`
+`mega-sync-one-way /data/files Files --exclude dir1 dir2/file1 **/*.jpg`
 
-This will result in `/data/files` being uploaded/synced to the remote with name `Files`. The directory `/data/files/dir1` and file `/data/files/dir2/file1` will not be uploaded.
+This will result in `/data/files` being uploaded/synced to the remote with name `Files`. The directory `/data/files/dir1`, the file `/data/files/dir2/file1`, and all *.jpg files in all sub-directories will not be uploaded.
 
 ### Caveats / TODO
 
