@@ -17,7 +17,7 @@ It's recommended to first use the `--dryrun` argument to show what actions will 
 ### Usage
 
 ```
-usage: mega-sync-one-way [-h] [-e [EXCLUDES ...]] [-d] local_dir remote_dir
+usage: mega-sync-one-way [-h] [--exclude [EXCLUDES ...]] [--dryrun] LOCALDIR REMOTEDIR
 
 positional arguments:
   LOCALDIR              local directory to sync to remote
@@ -25,9 +25,9 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -e [EXCLUDES ...], --exclude [EXCLUDES ...]
+  --exclude [EXCLUDES ...]
                         list of file patterns to exclude from sync
-  -d, --dryrun          output list of actions to be taken, but don't do anything
+  --dryrun              output list of actions to be taken, but don't do anything
 ```
 
 ### Examples

@@ -16,8 +16,8 @@ def main():
 
     parser.add_argument('LOCALDIR', help='local directory to sync to remote')
     parser.add_argument('REMOTEDIR', help='remote location to sync local directory')
-    parser.add_argument('-e', '--exclude', dest='excludes', nargs='*', help='list of file patterns to exclude from sync')
-    parser.add_argument('-d', '--dryrun', dest='dryrun', action='store_true', default=False, help='output list of actions to be taken, but don\'t do anything')
+    parser.add_argument('--exclude', dest='excludes', nargs='*', help='list of file patterns to exclude from sync')
+    parser.add_argument('--dryrun', dest='dryrun', action='store_true', default=False, help='output list of actions to be taken, but don\'t do anything')
 
     args = parser.parse_args()
 
