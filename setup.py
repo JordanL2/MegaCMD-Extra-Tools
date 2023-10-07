@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="megacmdextra",
-    version="1.0.0",
+    version="1.0.1",
     author="Jordan Leppert",
     author_email="jordanleppert@gmail.com",
     description="Extra tools for the Mega.nz megacmd toolset.",
